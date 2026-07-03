@@ -2,6 +2,43 @@
 
 ## Overview
 
+This project has **two orchestration layers**:
+
+1. **SDLC Orchestrator** (`orchestrator/orchestrator.py`) – Full software lifecycle DAG (Requirements → Release)
+2. **LangGraph AI Agent** (`app/services/agent_service.py`) – Real-time URL analysis workflow powered by Gemini
+
+| Layer | Purpose | Live UI |
+|---|---|---|
+| SDLC Orchestrator | Build/test/document the system itself | `/orchestrator` page |
+| LangGraph Agent | Analyze URLs at runtime | Home → AI Analyzer tab |
+
+**Live app:** https://frontend-dun-chi-79.vercel.app  
+**API:** https://backend-six-pied-13.vercel.app
+
+---
+
+## LangGraph AI Agent Workflow
+
+```
+[Entry] → [analyze_url] → [governance_router] → [suggest_alias] → [END]
+                               ↓ unsafe
+                              [END]
+```
+
+| Node | Type | Description |
+|---|---|---|
+| `analyze_url` | Agent | Gemini structured output: category, safety_status, tags |
+| `governance_router` | Gate | Blocks unsafe URLs (403); routes safe URLs to alias agent |
+| `suggest_alias` | Agent | Generates 4–6 char alias (skipped if custom alias provided) |
+
+**Streaming:** `POST /ai/analyze/stream` emits SSE events (`node_start`, `node_complete`, `governance_decision`, `workflow_complete`) consumed by the frontend `AgentFlowGraph` component.
+
+**API key:** Per-request `gemini_api_key` from the user session overrides the server `.env` key.
+
+---
+
+## SDLC Orchestrator
+
 The orchestration engine (`orchestrator/orchestrator.py`) implements a **non-linear, stateful SDLC pipeline** using a Directed Acyclic Graph (DAG). It coordinates all lifecycle stages from Requirements through Release with governance, retry logic, and human approval checkpoints.
 
 ---

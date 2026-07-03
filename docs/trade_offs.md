@@ -1,5 +1,16 @@
 # Trade-offs, Risks & Limitations
 
+## Live Deployment
+
+| Component | URL |
+|---|---|
+| Frontend | https://frontend-dun-chi-79.vercel.app |
+| Backend | https://backend-six-pied-13.vercel.app |
+| GitHub (backend) | https://github.com/satyamjaysawal/URL-Shortener-API |
+| GitHub (frontend) | https://github.com/satyamjaysawal/url-shortener-frontend |
+
+---
+
 ## Trade-offs
 
 ### 1. In-Memory Cache vs Redis
@@ -50,9 +61,11 @@
 2. **No geolocation**: `country` field reserved but not populated (requires GeoIP service).
 3. **No URL validation against blocklists**: Malicious URLs are not screened against threat feeds.
 4. **Single-process caching**: Cache is not shared across multiple uvicorn workers.
-5. **Orchestrator simulation**: The agentic orchestrator uses deterministic logic, not an LLM. Real production use would integrate an LLM API.
-6. **No persistent session for orchestrator**: Pipeline state written to local file (not a proper state store like Redis or DB).
-7. **Analytics at scale**: Current analytics aggregation loads all click events into memory. At >1M clicks, this should use MongoDB aggregation pipelines.
+5. **SDLC orchestrator vs runtime AI**: The SDLC orchestrator (`orchestrator/`) uses deterministic logic for pipeline stages. Runtime URL analysis uses Gemini via LangGraph (`agent_service.py`).
+6. **User API keys in session**: Frontend stores optional Gemini keys in `sessionStorage` — cleared on tab close, not encrypted at rest.
+7. **No persistent session for orchestrator**: Pipeline state written to local file (not a proper state store like Redis or DB).
+8. **Analytics at scale**: Current analytics aggregation loads all click events into memory. At >1M clicks, this should use MongoDB aggregation pipelines.
+9. **Gemini dependency**: AI features require a valid `GOOGLE_API_KEY` on the server or a user-provided key. Vercel cold starts may add latency to first AI request.
 
 ---
 

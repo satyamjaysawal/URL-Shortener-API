@@ -1,25 +1,52 @@
-# URL Shortener – Agentic SDLC System
+# URL Shortener API – LinkLy AI Backend
 
-A **production-grade URL Shortener** with a full agentic SDLC orchestration engine demonstrating the complete software lifecycle: Requirements → Architecture → Implementation → Testing → Documentation → Release.
+A **production-grade URL Shortener** with Gemini-powered LangGraph AI agents, click analytics, and a full agentic SDLC orchestration engine.
 
 ---
 
-## 🚀 Quick Start
+## Live Links
+
+| Resource | URL |
+|---|---|
+| **Production API** | https://backend-six-pied-13.vercel.app |
+| **Swagger UI** | https://backend-six-pied-13.vercel.app/docs |
+| **Health Check** | https://backend-six-pied-13.vercel.app/health |
+| **GitHub** | https://github.com/satyamjaysawal/URL-Shortener-API |
+| **Frontend (LinkLy AI)** | https://frontend-dun-chi-79.vercel.app |
+| **Frontend GitHub** | https://github.com/satyamjaysawal/url-shortener-frontend |
+
+---
+
+## Features
+
+- **URL shortening** – Custom aliases, expiry, soft-delete
+- **Click analytics** – Per-redirect events, daily breakdown, top referrers
+- **AI URL analysis** – LangGraph workflow with Gemini (safety, category, tags, smart alias)
+- **Streaming agent UI** – SSE endpoint for real-time LangGraph node events
+- **User API keys** – Optional per-request `gemini_api_key` (session-based on frontend)
+- **Reliability** – LRU cache, rate limiting, audit logging, health checks
+- **SDLC orchestrator** – Requirements → Architecture → Implementation → Testing ‖ Documentation → Release
+
+---
+
+## Quick Start (Local)
 
 ### 1. Install Dependencies
 
 ```bash
-cd assignment
+cd backend
 pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment
 
-`.env` is pre-configured with your MongoDB Atlas connection:
+Create or edit `.env`:
+
 ```env
 MONGODB_URI=mongodb+srv://...
 DATABASE_NAME=url-shortener-project-db
 BASE_URL=http://localhost:8000
+GOOGLE_API_KEY=your-gemini-api-key
 ```
 
 ### 3. Run the API
@@ -32,9 +59,39 @@ Visit:
 - **Swagger UI**: http://localhost:8000/docs
 - **Health check**: http://localhost:8000/health
 
+### 4. Run the Frontend (optional)
+
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:3000
+
 ---
 
-## 🤖 Run the Agentic Orchestrator
+## AI LangGraph Workflow
+
+```
+[Entry] → [Analyze URL] → [Governance Gate] → [Suggest Alias] → [Complete]
+                              ↓ (unsafe)
+                           [Blocked]
+```
+
+| Node | Description |
+|---|---|
+| `analyze_url` | Gemini safety scan, categorization, tag extraction |
+| `governance_router` | Blocks unsafe URLs; routes to alias suggestion when safe |
+| `suggest_alias` | AI-generated 4–6 char alias (skipped if custom alias provided) |
+
+**Endpoints:**
+- `POST /ai/analyze` – Full analysis (JSON response)
+- `POST /ai/analyze/stream` – Server-Sent Events stream of node execution
+
+---
+
+## Run the Agentic Orchestrator
 
 ```bash
 # Greenfield scenario (build from scratch)
@@ -62,7 +119,7 @@ python run_orchestrator.py --scenario greenfield --no-auto-approve
 
 ---
 
-## 🧪 Run Tests
+## Run Tests
 
 ```bash
 # All tests
@@ -77,16 +134,16 @@ pytest tests/integration/ -v
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-assignment/
+backend/
 ├── app/                      # FastAPI application
 │   ├── main.py               # App entrypoint + lifespan
 │   ├── config.py             # Pydantic settings
-│   ├── models/               # Pydantic data models
-│   ├── routers/              # Route handlers
-│   ├── services/             # Business logic
+│   ├── models/               # Pydantic data models (url, ai)
+│   ├── routers/              # Route handlers (shorten, ai, analytics, health)
+│   ├── services/             # Business logic + LangGraph agent
 │   ├── db/                   # MongoDB connection
 │   └── middleware/           # Rate limiting, audit logging
 │
@@ -100,34 +157,25 @@ assignment/
 │   └── audit.py              # JSON-L audit logger
 │
 ├── scenarios/                # Three demonstration scenarios
-│   ├── greenfield.py         # Build from scratch
-│   ├── brownfield.py         # Enhance existing code
-│   └── ambiguous.py          # Handle vague requirements
-│
-├── tests/                    # Test suite
-│   ├── unit/                 # Unit tests
-│   └── integration/          # Integration + E2E tests
-│
+├── tests/                    # Test suite (unit + integration)
 ├── docs/                     # Documentation
-│   ├── architecture.md
-│   ├── orchestration_model.md
-│   ├── api_reference.md
-│   └── trade_offs.md
-│
 ├── run_orchestrator.py       # Orchestrator CLI
 ├── requirements.txt
+├── vercel.json               # Vercel serverless config
 └── .env
 ```
 
 ---
 
-## 🔗 API Endpoints Summary
+## API Endpoints Summary
 
 | Method | Path | Description |
 |---|---|---|
-| POST | `/shorten` | Create short URL |
+| POST | `/shorten` | Create short URL (with optional AI alias) |
 | GET | `/{short_code}` | Redirect (302) |
 | DELETE | `/api/urls/{short_code}` | Soft-delete |
+| POST | `/ai/analyze` | AI URL analysis (JSON) |
+| POST | `/ai/analyze/stream` | AI analysis (SSE stream) |
 | GET | `/analytics/stats/{code}` | Basic stats |
 | GET | `/analytics/detail/{code}` | Full analytics |
 | GET | `/analytics/top` | Top URLs |
@@ -136,35 +184,34 @@ assignment/
 
 ---
 
-## 🏗️ Architecture Highlights
+## Architecture Highlights
 
 - **FastAPI** – Async, typed, auto-docs
 - **MongoDB** – Flexible schema, `clicks` collection for analytics
+- **LangGraph + Gemini** – Agentic URL analysis and alias suggestion
 - **LRU Cache** – In-memory hot-path cache (1000 entries, 5 min TTL)
 - **Rate Limiting** – Sliding-window 30 req/min per IP
 - **Audit Logging** – Every request logged with trace ID
-- **Orchestrator** – Pure Python DAG: Requirements→Architecture→Implementation→(Testing‖Documentation)→Release
+- **Vercel** – Serverless Python deployment via `@vercel/python`
 
 ---
 
-## 🛡️ Orchestration Features
-
-| Feature | Implementation |
-|---|---|
-| DAG execution | Topological sort with parallel batches |
-| State persistence | JSON file (`pipeline_state.json`) |
-| Bounded retry | Max 3, exponential backoff [1s, 2s, 4s] |
-| Rollback | Per-stage `rollback()` methods |
-| Human approval | Release gate checkpoint |
-| Governance | URL policy, entry gates, schema change control |
-| Audit trail | JSON-L with run ID, stage, action, outcome |
-| Metrics | Success rate, retry count, MTTR, E2E latency |
-
----
-
-## 📖 See Also
+## Documentation
 
 - [Architecture Overview](docs/architecture.md)
 - [Orchestration Model](docs/orchestration_model.md)
 - [API Reference](docs/api_reference.md)
 - [Trade-offs & Risks](docs/trade_offs.md)
+
+---
+
+## Deployment
+
+Deployed on **Vercel** from the `main` branch:
+
+```bash
+cd backend
+vercel --prod --yes
+```
+
+Production URL: https://backend-six-pied-13.vercel.app
