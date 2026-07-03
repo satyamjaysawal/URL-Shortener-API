@@ -24,8 +24,11 @@ class Settings(BaseSettings):
     )
     database_name: str = "url-shortener-project-db"
 
-    # App
-    base_url: str = "http://localhost:8000"
+    # Public URL used in generated short links (must be the stable production domain)
+    base_url: str = Field(
+        default="http://localhost:8000",
+        validation_alias=AliasChoices("BASE_URL", "PUBLIC_BASE_URL", "base_url"),
+    )
     short_code_length: int = 7
     app_title: str = "URL Shortener API"
     app_version: str = "1.0.0"
@@ -57,9 +60,14 @@ class Settings(BaseSettings):
             if database_url.startswith(("mongodb://", "mongodb+srv://")):
                 self.mongodb_uri = database_url
 
-        vercel_url = os.environ.get("VERCEL_URL")
-        if vercel_url:
-            self.base_url = f"https://{vercel_url}"
+        # Only fall back to VERCEL_URL when BASE_URL is unset/default — deployment
+        # URLs (e.g. backend-xxx.vercel.app) require Vercel SSO and are not public.
+        if self.base_url == "http://localhost:8000":
+            vercel_url = os.environ.get("VERCEL_URL")
+            if vercel_url:
+                self.base_url = f"https://{vercel_url}"
+
+        self.base_url = self.base_url.rstrip("/")
 
 
 @lru_cache()
