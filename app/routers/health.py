@@ -1,11 +1,14 @@
 """
 routers/health.py – GET /health and GET /metrics
 """
+import asyncio
+import logging
+import time
+
 from fastapi import APIRouter
+
 from app.db.mongodb import get_db
 from app.services.cache_service import get_cache
-import time
-import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Health"])
@@ -23,7 +26,9 @@ async def health_check():
     db_status = "healthy"
     try:
         db = get_db()
-        await db.client.admin.command("ping")
+        await asyncio.wait_for(db.client.admin.command("ping"), timeout=8.0)
+    except asyncio.TimeoutError:
+        db_status = "unhealthy: database connection timed out"
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
 

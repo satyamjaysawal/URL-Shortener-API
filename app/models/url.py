@@ -22,6 +22,22 @@ class URLRequest(BaseModel):
         le=8760,
         description="Hours until the short URL expires (max 365 days)"
     )
+    gemini_api_key: Optional[str] = Field(
+        None,
+        description="Optional user-provided Gemini API key for this session",
+    )
+
+    @field_validator("gemini_api_key")
+    @classmethod
+    def validate_gemini_key(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if not v:
+            return None
+        if len(v) < 10:
+            raise ValueError("Gemini API key is too short")
+        return v
 
     @field_validator("long_url")
     @classmethod

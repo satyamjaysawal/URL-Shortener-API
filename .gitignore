@@ -10,3 +10,6 @@ audit.jsonl
 pipeline_state.json
 .DS_Store
 .vercel/
+
+.vercel
+.env*

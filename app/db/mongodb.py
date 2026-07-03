@@ -1,10 +1,14 @@
 """
 db/mongodb.py – Async MongoDB connection manager with retry logic.
 """
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from typing import Optional
 import asyncio
 import logging
+import os
+from typing import Optional
+
+import certifi
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo.server_api import ServerApi
 
 logger = logging.getLogger(__name__)
 
@@ -12,12 +16,29 @@ _client: Optional[AsyncIOMotorClient] = None
 _db: Optional[AsyncIOMotorDatabase] = None
 
 
+def _client_options() -> dict:
+    """Motor client options tuned for Atlas + serverless (Vercel)."""
+    opts = {
+        "server_api": ServerApi("1"),
+        "serverSelectionTimeoutMS": 10000,
+        "connectTimeoutMS": 10000,
+        "tlsCAFile": certifi.where(),
+        "tlsDisableOCSPEndpointCheck": True,
+        "retryWrites": True,
+    }
+    # Smaller pool for serverless cold starts
+    if os.environ.get("VERCEL"):
+        opts["maxPoolSize"] = 10
+        opts["minPoolSize"] = 0
+    return opts
+
+
 async def connect_db(uri: str, db_name: str, max_retries: int = 3) -> None:
     """Connect to MongoDB with exponential backoff retry."""
     global _client, _db
     for attempt in range(1, max_retries + 1):
         try:
-            _client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000)
+            _client = AsyncIOMotorClient(uri, **_client_options())
             # Trigger actual connection test
             await _client.admin.command("ping")
             _db = _client[db_name]
@@ -54,6 +75,6 @@ def get_db() -> AsyncIOMotorDatabase:
         import asyncio
         settings = get_settings()
         # Initialize connection synchronously for this request scope
-        _client = AsyncIOMotorClient(settings.mongodb_uri, serverSelectionTimeoutMS=5000)
+        _client = AsyncIOMotorClient(settings.mongodb_uri, **_client_options())
         _db = _client[settings.database_name]
     return _db

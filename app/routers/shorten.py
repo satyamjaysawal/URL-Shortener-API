@@ -28,7 +28,10 @@ async def shorten_url(request: URLRequest):
     try:
         return await url_service.create_short_url(request)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+        msg = str(e)
+        if "unsafe" in msg.lower():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=msg)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
     except RuntimeError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 

@@ -21,7 +21,7 @@ from app.db.mongodb import connect_db, close_db
 from app.services.cache_service import init_cache
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.audit_log import AuditLogMiddleware
-from app.routers import shorten, redirect, analytics, health
+from app.routers import shorten, redirect, analytics, health, ai
 
 # ── Logging setup ──────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -75,6 +75,7 @@ app.add_middleware(
 
 # ── Routers ────────────────────────────────────────────────────────────────────
 app.include_router(health.router)
+app.include_router(ai.router)
 app.include_router(shorten.router)
 app.include_router(analytics.router)
 app.include_router(redirect.router)   # Must be LAST – catches /{short_code}

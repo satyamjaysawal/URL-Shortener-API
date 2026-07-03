@@ -32,7 +32,11 @@ async def create_short_url(request: URLRequest) -> URLResponse:
     from app.services.agent_service import run_url_agent_workflow
 
     # Run AI analysis workflow via LangGraph
-    agent_res = await run_url_agent_workflow(request.long_url, request.custom_alias)
+    agent_res = await run_url_agent_workflow(
+        request.long_url,
+        request.custom_alias,
+        gemini_api_key=request.gemini_api_key,
+    )
     
     # Safety Check
     if agent_res.get("safety_status") == "unsafe":
