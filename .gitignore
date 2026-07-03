@@ -1,0 +1,12 @@
+venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+orchestrator.log
+audit.jsonl
+pipeline_state.json
+.DS_Store
+.vercel/
