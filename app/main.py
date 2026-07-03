@@ -37,7 +37,10 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Starting URL Shortener API...")
-    await connect_db(settings.mongodb_uri, settings.database_name)
+    try:
+        await connect_db(settings.mongodb_uri, settings.database_name)
+    except Exception as e:
+        logger.error(f"❌ Failed to connect to MongoDB during startup: {e}")
     init_cache(
         max_size=settings.cache_max_size,
         ttl_seconds=settings.cache_ttl_seconds,
