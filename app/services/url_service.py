@@ -27,9 +27,19 @@ def _generate_code(length: int = 7) -> str:
 async def create_short_url(request: URLRequest) -> URLResponse:
     """
     Create a new short URL entry in MongoDB.
-    Supports custom alias and expiry.
+    Supports custom alias, expiry, safety analysis and smart suggested aliases.
     """
+    from app.services.agent_service import run_url_agent_workflow
+
+    # Run AI analysis workflow via LangGraph
+    agent_res = await run_url_agent_workflow(request.long_url, request.custom_alias)
+    
+    # Safety Check
+    if agent_res.get("safety_status") == "unsafe":
+        raise ValueError("URL is flagged as unsafe by AI safety agent.")
+
     db = get_db()
+    smart_alias = agent_res.get("smart_alias")
 
     # Determine short code
     if request.custom_alias:
@@ -37,6 +47,19 @@ async def create_short_url(request: URLRequest) -> URLResponse:
         existing = await db.urls.find_one({"short_code": code})
         if existing:
             raise ValueError(f"Alias '{code}' is already taken.")
+    elif smart_alias:
+        # Check if smart suggested alias is available
+        existing = await db.urls.find_one({"short_code": smart_alias})
+        if not existing:
+            code = smart_alias
+        else:
+            # Fall back to random unique code if suggested alias is already taken
+            for attempt in range(5):
+                code = _generate_code(settings.short_code_length)
+                if not await db.urls.find_one({"short_code": code}):
+                    break
+            else:
+                raise RuntimeError("Failed to generate a unique short code. Please try again.")
     else:
         # Generate unique code with collision avoidance (max 5 attempts)
         for attempt in range(5):
@@ -58,6 +81,9 @@ async def create_short_url(request: URLRequest) -> URLResponse:
         "is_active": True,
         "created_at": now,
         "expires_at": expires_at,
+        "category": agent_res.get("category"),
+        "tags": agent_res.get("tags"),
+        "safety_status": agent_res.get("safety_status"),
     }
     await db.urls.insert_one(doc)
     logger.info(f"Created short URL: {code} -> {request.long_url[:60]}")
@@ -68,6 +94,9 @@ async def create_short_url(request: URLRequest) -> URLResponse:
         long_url=request.long_url,
         created_at=now,
         expires_at=expires_at,
+        category=doc["category"],
+        tags=doc["tags"],
+        safety_status=doc["safety_status"],
     )
 
 

@@ -2,7 +2,7 @@
 models/url.py – Pydantic models for URL entities.
 """
 from pydantic import BaseModel, HttpUrl, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timezone
 
 
@@ -41,6 +41,9 @@ class URLResponse(BaseModel):
     long_url: str
     created_at: datetime
     expires_at: Optional[datetime] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = None
+    safety_status: Optional[str] = None
 
 
 class URLDocument(BaseModel):
@@ -51,6 +54,9 @@ class URLDocument(BaseModel):
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = None
+    safety_status: Optional[str] = None
 
     model_config = {"arbitrary_types_allowed": True}
 

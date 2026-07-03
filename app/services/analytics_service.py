@@ -78,6 +78,9 @@ async def get_analytics(short_code: str) -> Optional[AnalyticsSummary]:
         is_active=doc.get("is_active", True),
         created_at=doc["created_at"],
         expires_at=doc.get("expires_at"),
+        category=doc.get("category"),
+        tags=doc.get("tags"),
+        safety_status=doc.get("safety_status"),
     )
 
 

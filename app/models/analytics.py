@@ -34,6 +34,9 @@ class AnalyticsSummary(BaseModel):
     is_active: bool
     created_at: datetime
     expires_at: Optional[datetime] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = None
+    safety_status: Optional[str] = None
 
 
 class TopURL(BaseModel):
